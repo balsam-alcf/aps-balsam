@@ -45,13 +45,13 @@ APPS = [find_rst, register, align]
 for app in APPS:
     if not App.objects.filter(name=app.name).exists():
         app.save()
+        print(f"Created app {app.name} in DB")
     else:
         existing_app = App.objects.get(name=app.name)
         existing_app.executable = app.executable
         existing_app.postprocess = app.postprocess
         existing_app.preprocess = app.preprocess
-        existing_app.envscript = app.envscript
+        if hasattr(app, "envscript"):
+            existing_app.envscript = app.envscript
         existing_app.save()
         print(f"Updated App {app.name} in DB")
-    else:
-        print(f"Created App {app.name} in DB")

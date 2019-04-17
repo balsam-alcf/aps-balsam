@@ -10,19 +10,20 @@ from balsam.launcher import dag
 
 # Run parameters
 common_params = {
-    num_nodes = 1,
-    ranks_per_node = 16,
-    cpu_affinity = "none", # -cc none
+    'num_nodes': 1,
+    'ranks_per_node': 16,
+    'cpu_affinity': "none", # -cc none
 }
 
 def add_dag(image_dir):
-    if Job.objects.filter(workflow=image_dir).exists():
-        print(f"A DAG for processing {image_dir} has already been created")
+    workflow = os.path.basename(image_dir)
+    if Job.objects.filter(workflow=workflow).exists():
+        existing = Job.objects.get(workflow=workflow, name="find_rst").stage_in_url
+        print(f"A workflow named '{workflow}' has already been created for {existing}")
+        print(f"Please give the --images folder a unique base name to avoid a naming collision")
         sys.exit(1)
 
-    common_params.update({
-        workflow = image_dir,
-    })
+    common_params['workflow'] = workflow
 
     find_rst = Job(
         name="find_rst",
@@ -45,6 +46,7 @@ def add_dag(image_dir):
     align.save()
     dag.add_dependency(find_rst, register)
     dag.add_dependency(register, align)
+    print(f"Created new DAG to process {image_dir}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
