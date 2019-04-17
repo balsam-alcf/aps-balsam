@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+import os
+from balsam.core.models import ApplicationDefinition as App
+
+# Path to aligntk bin on Balsam site
+here = os.path.dirname(os.path.abspath(__file__))
+aligntk_bin = '../aligntk-1.0.2/install/bin' # relative to here
+BIN = os.path.abspath(os.path.join(here, aligntk_bin))
+
+# Sanity checks
+assert os.path.isdir(BIN), f'Cannot find aligntk binaries folder: {BIN}'
+for f in 'find_rst register align'.split():
+    assert os.path.isfile(os.path.join(BIN, f)), f'Cannot find {f} in {BIN}'
+
+assert os.path.exists(os.path.join(here, "pre_findrst.py"))
+
+# Define Apps
+find_rst = App(
+    name = "find_rst",
+    executable = (
+        f'{os.path.join(BIN, "find_rst")} -tif  -output cmaps/ -max_res 4096 '
+        f'-scale 1.0 -tx -50-50 -ty -50-50 -summary cmaps/summary.out -images images/ -pairs pairs.lst'
+    ),
+    preprocess = os.path.join(here, "pre_findrst.py"),
+)
+register = App(
+    name = "register",
+    executable = (
+        f'{os.path.join(BIN, "register")} -tif -output maps/ -distortion 4.0 -images images/ -pairs pairs.lst'
+        f'-output_level 6 -depth 6 -quality 03 -summary maps/summary.out -initial_map cmaps/ '
+    ),
+)
+        
+align = App(
+    name = "align",
+    executable = (
+        f'{os.path.join(BIN, "align")}    -image_list images.lst -map_list pairs.lst ' 
+        f'-maps /maps/ -output /amaps/ -schedule schedule.lst -incremental ' 
+        f'-output_grid /grids/ -grid_size 13642x23904 -fixed S_0000 -images images/'
+    ),
+)
+
+# Create or update the DB with APPS defined above
+APPS = [find_rst, register, align]
+for app in APPS:
+    if not App.objects.filter(name=app.name).exists():
+        app.save()
+    else:
+        existing_app = App.objects.get(name=app.name)
+        existing_app.executable = app.executable
+        existing_app.postprocess = app.postprocess
+        existing_app.preprocess = app.preprocess
+        existing_app.envscript = app.envscript
+        existing_app.save()
+        print(f"Updated App {app.name} in DB")
+    else:
+        print(f"Created App {app.name} in DB")
