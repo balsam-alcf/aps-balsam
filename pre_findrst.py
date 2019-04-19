@@ -16,10 +16,10 @@ for d in dirs:
 # Identify folder with *.tif and collect images
 image_paths = glob.glob('*/*.tif')
 images_dir = list(set([os.path.dirname(p) for p in image_paths]))[0]
-image_names = [
+image_names = sorted([
     imgName(p) for p in image_paths
     if os.path.dirname(p) == images_dir
-]
+])
 
 print(f'Detected {len(image_names)} .tif images in {images_dir}')
 
