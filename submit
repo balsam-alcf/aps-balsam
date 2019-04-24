@@ -1,10 +1,14 @@
+#!/usr/bin/env python
 import argparse
+import glob
 import getpass
 import json
 import time
 import subprocess
 import os
+import sys
 import pexpect
+from add_dag import add_dag
 
 def connect(thetahost, thetaport):
     uname = getpass.getuser()
@@ -31,14 +35,20 @@ def connect(thetahost, thetaport):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--db', required=True, help="path to directory containing server-info")
-parser.add_argument('--images', required=True, action='append')
+parser.add_argument('--images', required=True, help="path to directory of .tif images")
+parser.add_argument('--destination', required=True, help="where to send data on Theta")
 args = parser.parse_args()
+args.db = os.path.abspath(os.path.expanduser(args.db))
+args.images = os.path.abspath(os.path.expanduser(args.images))
+args.destination = os.path.abspath(os.path.expanduser(args.destination))
 
 # load db/server-info
 assert os.path.isdir(args.db)
 info_path = os.path.join(args.db, 'server-info')
 assert os.path.isfile(info_path)
 with open(info_path) as fp: info = json.load(fp)
+assert os.path.isdir(args.images)
+assert len(glob.glob(os.path.join(args.images, '*.tif'))) >= 2
 
 # modify host; export BALSAM_DB_PATH
 thetaport = info["port"]
@@ -62,6 +72,18 @@ for app in App.objects.all():
 assert all(app in found_apps for app in required_apps)
 print(f"Got all required apps ({required_apps}): OK!")
 
-# create DAG for each images/ folder on commandline
+# Transfer images
+print("Transferring images...")
+uname = getpass.getuser()
+transfer_proc = subprocess.Popen(f'scp -r {args.images} {uname}@{thetahost}.alcf.anl.gov:{args.destination}', shell=True)
+print("Waiting on scp to finish...")
+retcode = transfer_proc.wait()
+print(f"SCP Done: return code {retcode}")
+if retcode != 0:
+    print("Transfer did not succeed.")
+    sys.exit(1)
 
-# ssh: submit-launch command
+# create DAG for images/
+image_dir_on_theta = args.destination
+print("Adding DAG to Balsam DB: will run in", image_dir_on_theta)
+jobs = add_dag(image_dir_on_theta)

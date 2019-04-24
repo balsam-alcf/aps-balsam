@@ -4,18 +4,18 @@ import glob
 import os
 import sys
 
-from balsam.core.models import ApplicationDefinition as App
-from balsam.core.models import BalsamJob as Job
-from balsam.launcher import dag
-
 # Run parameters
 common_params = {
-    'num_nodes': 1,
-    'ranks_per_node': 16,
+    'num_nodes': 16,
+    'ranks_per_node': 1,
     'cpu_affinity': "none", # -cc none
 }
 
 def add_dag(image_dir):
+    from balsam.core.models import ApplicationDefinition as App
+    from balsam.core.models import BalsamJob as Job
+    from balsam.launcher import dag
+
     workflow = os.path.basename(image_dir)
     if Job.objects.filter(workflow=workflow).exists():
         existing = Job.objects.get(workflow=workflow, name="find_rst").stage_in_url
@@ -28,7 +28,7 @@ def add_dag(image_dir):
     find_rst = Job(
         name="find_rst",
         application="find_rst",
-        stage_in_url=image_dir,
+        user_workdir=image_dir,
         **common_params,
     )
     register = Job(
@@ -47,6 +47,7 @@ def add_dag(image_dir):
     dag.add_dependency(find_rst, register)
     dag.add_dependency(register, align)
     print(f"Created new DAG to process {image_dir}")
+    return find_rst, register, align
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

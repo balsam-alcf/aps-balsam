@@ -8,6 +8,12 @@ balsam init /path/to/testdb
 . balsamactivate /path/to/testdb
 ```
 
+You will want to configure the queue policy in ~/.balsam/theta_policy.ini. 
+For this demo, set `submit-jobs = off` for the debug queue, and 
+`submit-jobs = on` for the default queue.  Also, set `max-queued = 1`.
+Then, stand up the balsam service with `balsam service`.  It will be logging to
+a service log file in the log/ subdirectory.  
+
 ## Populate DB with Apps
 Now, grab an AlignTK build, configure the init-xray-apps script to point at them,
 and run it to register the AlignTK  apps with the current DB.
@@ -68,10 +74,11 @@ scp msalim@theta:/path/to/testdb/server-info .
 ```
 
 # Run ./submit to initiate the transfer and start the jobs on Theta
-Pass the DB (directory containing server-info) and one or more --images arguments (each specifying an images/ directory)
+Pass the DB (directory containing server-info) and --images arguments (each specifying an images/ directory)
 to the aps-balsam/submit script.  This also requires batch job submission parameters for Cobalt (e.g. how many nodes and
-how much walltime is requested for the processing workflow).  The script will open a tunnel with port forwarding, prompting you
-to authenticate to Theta. The rest is automatically initiated.
+how much walltime is requested for the processing workflow).  The script will open a tunnel with port forwarding, prompting you to authenticate to Theta. The rest is automatically initiated.
 ```
-./submit --db=/path/to/testdb --images <image-dir1> --images <image-dir2> -n Num_Nodes -A Project -q Queue -t WallTimeMinutes
+./submit --db=/path/to/testdb --images /path/to/images/on/alcfxray1 --destination /path/to/workdir/on/theta
 ```
+
+That's it!  You can check with `balsam ls` that the jobs were actually created, and the service log will show activity for the submitted jobs. Of course, you can always verify the job is queued with `qstat`.
