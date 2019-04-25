@@ -71,6 +71,7 @@ def read_server_info(db_path):
 
 def check_apps(required_apps):
     '''Ensure that requisite AlignTK apps are already registered'''
+    from balsam.core.models import ApplicationDefinition as App
     found_apps = [app.name for app in App.objects.all()]
     assert all(app in found_apps for app in required_apps)
     print(f"Got all required apps ({required_apps}): OK!")
@@ -96,7 +97,6 @@ def main():
     thetahost, thetaport = read_server_info(args.db)
     tunnel = connect(thetahost, thetaport)
 
-    from balsam.core.models import ApplicationDefinition as App
     check_apps(["find_rst", "register", "align"])
 
     # Transfer images
