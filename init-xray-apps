@@ -19,15 +19,17 @@ find_rst = App(
     name = "find_rst",
     executable = (
         f'{os.path.join(BIN, "find_rst")} -tif  -output cmaps/ -max_res 4096 '
-        f'-scale 1.0 -tx -50-50 -ty -50-50 -summary cmaps/summary.out -images images/ -pairs pairs.lst'
+        f'-scale 1.0 -tx -50-50 -ty -50-50 -summary cmaps/summary.out -images images/ -pairs pairs.lst '
+        f'-logs .'
+
     ),
     preprocess = os.path.join(here, "pre_findrst.py"),
 )
 register = App(
     name = "register",
     executable = (
-        f'{os.path.join(BIN, "register")} -tif -output maps/ -distortion 4.0 -images images/ -pairs pairs.lst'
-        f'-output_level 6 -depth 6 -quality 03 -summary maps/summary.out -initial_map cmaps/ '
+        f'{os.path.join(BIN, "register")} -tif -output maps/ -distortion 4.0 -images images/ -pairs pairs.lst '
+        f' -output_level 6 -depth 6 -quality 03 -summary maps/summary.out -initial_map cmaps/ -logs .'
     ),
 )
         
@@ -36,7 +38,7 @@ align = App(
     executable = (
         f'{os.path.join(BIN, "align")}    -image_list images.lst -map_list pairs.lst ' 
         f'-maps /maps/ -output /amaps/ -schedule schedule.lst -incremental ' 
-        f'-output_grid /grids/ -grid_size 13642x23904 -fixed S_0000 -images images/'
+        f'-output_grid /grids/ -grid_size 13642x23904 -fixed S_0000 -images images/ -logs .'
     ),
 )
 

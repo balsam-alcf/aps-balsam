@@ -84,6 +84,7 @@ if retcode != 0:
     sys.exit(1)
 
 # create DAG for images/
-image_dir_on_theta = args.destination
-print("Adding DAG to Balsam DB: will run in", image_dir_on_theta)
+images_basename = os.path.basename(args.images)
+image_dir_on_theta = os.path.join(args.destination, images_basename)
+print("Adding DAG to Balsam DB")
 jobs = add_dag(image_dir_on_theta)

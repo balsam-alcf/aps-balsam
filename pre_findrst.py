@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from balsam.launcher.dag import current_job
 import glob
 import os
 
@@ -7,6 +8,10 @@ def imgName(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 # Create requisite directories in parent folder
+images_dir = current_job.data['images_dir']
+os.symlink(images_dir, 'images')
+print(f"Created symlink images/ --> {images_dir}")
+
 dirs = 'cmaps maps amaps grids aligned'.split()
 for d in dirs:
     if not os.path.isdir(d): 
@@ -14,21 +19,12 @@ for d in dirs:
         print(f"Created {d}")
 
 # Identify folder with *.tif and collect images
-image_paths = glob.glob('*/*.tif')
-images_dir = list(set([os.path.dirname(p) for p in image_paths]))[0]
+image_paths = glob.glob('images/*.tif')
 image_names = sorted([
     imgName(p) for p in image_paths
-    if os.path.dirname(p) == images_dir
 ])
 
-print(f'Detected {len(image_names)} .tif images in {images_dir}')
-
-# Rename images folder as "./images"
-src = os.path.abspath(images_dir)
-dest = os.path.abspath('./images')
-if src != dest: 
-    os.rename(src, dest)
-    print(f"Renamed {src} --> {dest}")
+print(f'Detected {len(image_names)} .tif images')
 
 # Generate images.lst file
 with open('images.lst', 'w') as fp:
