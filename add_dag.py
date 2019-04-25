@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-import argparse
-import glob
 import os
 import sys
 
-# Run parameters
+# Set run parameters here
 common_params = {
     'num_nodes': 16,
     'ranks_per_node': 1,
     'cpu_affinity': "none", # -cc none
 }
 
+
 def add_dag(images_dir):
+    '''Add a sequence of AlignTK Jobs to the DB'''
     from balsam.core.models import ApplicationDefinition as App
     from balsam.core.models import BalsamJob as Job
     from balsam.launcher import dag
@@ -50,20 +50,3 @@ def add_dag(images_dir):
     dag.add_dependency(register, align)
     print(f"Created new DAG to process {images_dir}")
     return find_rst, register, align
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--images', required=True, help='Path to image directory')
-    args = parser.parse_args()
-    images_dir = os.path.abspath(os.path.expanduser(args.images))
-    assert os.path.isdir(images_dir), f'{images_dir} is not a directory'
-    if len(glob.glob(os.path.join(images_dir, '*.tif'))) < 2:
-        raise RuntimeError(f"{images_dir} needs to contain at least two .tif images!")
-
-    for name in "find_rst register align".split():
-        if not App.objects.filter(name=name).exists():
-            raise RuntimeError(
-                f"Application {name} is not registered with Balsam. " 
-                "Please go run init-xray-apps on the Balsam site first."
-            )
-    add_dag(images_dir)
