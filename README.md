@@ -74,11 +74,13 @@ scp msalim@theta:/path/to/testdb/server-info .
 ```
 
 # Run ./submit to initiate the transfer and start the jobs on Theta
-Pass the DB (directory containing server-info) and --images arguments (each specifying an images/ directory)
-to the aps-balsam/submit script.  This also requires batch job submission parameters for Cobalt (e.g. how many nodes and
-how much walltime is requested for the processing workflow).  The script will open a tunnel with port forwarding, prompting you to authenticate to Theta. The rest is automatically initiated.
+The `submit` script will open a tunnel with port forwarding, prompting you to authenticate to Theta. 
+
 ```
 ./submit --db=/path/to/testdb --images /path/to/images/on/alcfxray1 --destination /path/to/workdir/on/theta
 ```
-
-That's it!  You can check with `balsam ls` that the jobs were actually created, and the service log will show activity for the submitted jobs. Of course, you can always verify the job is queued with `qstat`.
+The rest is automatically initiated:
+  - file transfer
+  - DAG creation
+  
+That's it!  You can check with `balsam ls` that the jobs were actually created.  The balsam service will immediately start preprocessing `find_rst` and subsequently submit a launcher job to process the whole DAG. You can read over the service log (in the log/ subdirectory of the balsam database); that will show activity for the submitted jobs. Of course, you can always double-verify the job is queued in Cobalt with `qstat`.
