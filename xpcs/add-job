@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import os
+import sys
+from balsam.core.models import BalsamJob as Job
+
+def add_job(config, data):
+    config = os.path.basename(config)
+    data = os.path.basename(data)
+    j = Job(
+        name = data,
+        workflow = config,
+        application = 'corr',
+        args = f' {config} {data}',
+    )
+if __name__ == "__main__":
+    if not len(sys.argv) == 3:
+        print("Usage:", sys.argv[0], "{config.hdf5}", "{data.imm}")
+        sys.exit(1)
+    config = os.path.abspath(sys.argv[1])
+    assert config.endswith('.hdf5'), f'{config} should have .hdf5 extension'
+    data = os.path.abspath(sys.argv[2])
+    assert data.endswith('.imm'), f'{data} should have .imm extension'
+    assert os.path.isfile(config)
+    add_job(config, data)

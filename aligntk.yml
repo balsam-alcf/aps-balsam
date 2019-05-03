@@ -1,0 +1,63 @@
+PLACEHOLDERS:
+    - images_dir
+exe_dir: ../aligntk-1.0.2/install/bin 
+db_path: ~/db
+transfer:
+    mode: scp
+    destination: /projects/datascience/msalim/test
+
+task_params:
+    num_nodes: 16
+    ranks_per_node: 1
+    cpu_affinity: none
+    input_files: "images cmaps maps images.lst pairs.lst amaps grids aligned schedule.lst" 
+
+apps:
+    find_rst:
+        fixed_args:
+            - -tif
+            - -output cmaps/
+            - -max_res 4096
+            - -scale 1.0
+            - -tx -50-50
+            - -ty -50-50
+            - -summary cmaps/summary.out
+            - -images {{ images_dir }}
+            - -pairs pairs.lst
+        preprocess: "pre_findrst.py"
+        task_params:
+            cpu_affinity: depth
+
+    register:
+        fixed_args:
+            - -tif
+            - -output maps/
+            - -distortion 4.0
+            - images images/
+            - -pairs pairs.lst
+            - -output_level 6
+            - -depth 6
+            - -quality 03
+            - -summary maps/summary.out
+            - -initial_map cmaps/
+    align:
+        fixed_args:
+            - -image_list images.lst
+            - -map_list pairs.lst
+            - -maps /maps/
+            - -output /amaps/
+            - -schedule schedule.lst
+            - -incremental
+            - -output_grid /grids/
+            - -grid_size 13642x23904
+            - -fixed S_0000
+            - -images images
+
+tasks:
+    - find_rst: {}
+    - register: {}
+    - align: {}
+
+dependencies:
+    - [find_rst, register]
+    - [register, align]
