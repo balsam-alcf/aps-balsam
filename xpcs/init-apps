@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+import os
+import shutil
+from balsam.core.models import ApplicationDefinition as App
+
+CORR_EXE = '/projects/datascience/aps/software/xpcs-eigen/build/corr'
+assert shutil.which(CORR_EXE) is not None
+
+# Define Apps
+corr = App(
+    name = "corr",
+    executable = CORR_EXE,
+    preprocess = os.path.join(here, "pre_corr.py"),
+)
+
+# Create or update the DB with APPS defined above
+APPS = [corr,]
+for app in APPS:
+    if not App.objects.filter(name=app.name).exists():
+        app.save()
+        print(f"Created app {app.name} in DB")
+    else:
+        existing_app = App.objects.get(name=app.name)
+        existing_app.executable = app.executable
+        existing_app.postprocess = app.postprocess
+        existing_app.preprocess = app.preprocess
+        if hasattr(app, "envscript"):
+            existing_app.envscript = app.envscript
+        existing_app.save()
+        print(f"Updated App {app.name} in DB")
