@@ -27,6 +27,16 @@ def check_existing_tunnel(thetahost, thetaport):
     else:
         return False
 
+def known_host(host):
+    hostsfile = os.path.expanduser('~/.ssh/known_hosts')
+    if not os.path.isfile(hostsfile):
+        return False
+    with open(hostsfile) as fp:
+        for line in fp:
+            if host in line: return True
+    return False
+            
+
 def connect(thetahost, thetaport):
     '''Set up SSH tunnel with port-forwarding, if there isn't already one alive'''
     if check_existing_tunnel(thetahost, thetaport):
@@ -35,6 +45,13 @@ def connect(thetahost, thetaport):
     credential = getpass.getpass("Please authenticate to Theta: ")
     ssh_cmd = f"ssh -f -N -L {thetaport}:localhost:{thetaport} {UNAME}@{thetahost}.alcf.anl.gov"
     tunnel = pexpect.spawn(ssh_cmd)
+
+    if not known_host(thetahost):
+        tunnel.expect('Are you sure you want to continue connecting (yes/no)?')
+        time.sleep(0.1)
+        tunnel.sendline('yes')
+        time.sleep(0.1)
+
     tunnel.expect('Password:')
     time.sleep(0.1)
     tunnel.sendline(credential)
