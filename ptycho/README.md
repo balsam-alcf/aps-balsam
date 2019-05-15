@@ -38,6 +38,7 @@ Now run the script to register the Application with Balsam.  If all went well, y
 # after setting EXE above
 ./init-apps
 balsam ls apps --verbose # ensure the apps show up correctly!
+file pre_reconstruct_cone.py # ensure executable bit is set
 ```
 
 That's it for Balsam setup on theta.  You now have a running Balsam DB containing the `job_recon_cone` Applicationdefinition and associated environment needed to run the application. Let's go over to `alcfxray1` and get the client set up.
