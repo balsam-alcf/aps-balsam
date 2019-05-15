@@ -4,7 +4,7 @@ from balsam.core.models import ApplicationDefinition as App
 
 # Path to aligntk bin on Balsam site
 here = os.path.dirname(os.path.abspath(__file__))
-aligntk_bin = '../aligntk-1.0.2/install/bin' # relative to here
+aligntk_bin = '../../aligntk-1.0.2/install/bin' # relative to here
 BIN = os.path.abspath(os.path.join(here, aligntk_bin))
 
 # Sanity checks
