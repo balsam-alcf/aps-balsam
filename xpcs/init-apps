@@ -3,6 +3,7 @@ import os
 import shutil
 from balsam.core.models import ApplicationDefinition as App
 
+here = os.path.dirname(os.path.abspath(__file__))
 CORR_EXE = '/projects/datascience/aps/software/xpcs-eigen/build/corr'
 assert shutil.which(CORR_EXE) is not None
 

@@ -32,6 +32,17 @@ You will need to set one line in the `init-apps` script to tell Balsam where you
 ```
 EXE = '/projects/datascience/msalim/large3dxrayADSP/reconstruct_cone.py'
 ```
+
+Make sure that this script is in fact executable, and the first line includes the proper
+interpreter directive:
+```
+#!/usr/bin/env python
+```
+
+The Python environment is configured for each run using the `envs.sh` script. Modify the environment
+variable `PTYCHO_BASE` in this script to ensure that `PYTHONPATH` will contain the correct package
+directories.
+
 Now run the script to register the Application with Balsam.  If all went well, you can verify with `balsam ls apps` that the applications are properly defined.
 
 ```

@@ -3,7 +3,7 @@ import os
 import shutil
 from balsam.core.models import ApplicationDefinition as App
 
-here = os.path.abspath(os.path.dirname(__file__))
+here = os.path.dirname(os.path.abspath(__file__))
 EXE = '/projects/datascience/msalim/large3dxrayADSP/reconstruct_cone.py'
 assert shutil.which(EXE) is not None
 
