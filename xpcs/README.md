@@ -38,6 +38,7 @@ Now run the script to register the Applications with Balsam.  If all went well, 
 # after setting corr_exe above
 ./init-apps
 balsam ls apps --verbose # ensure the apps show up correctly!
+file pre_corr.py # ensure that the preprocess script has executable permission set
 ```
 
 That's it for Balsam setup on theta.  You now have a running Balsam DB containing the corr Application definitions, command lines, and pre-processing scripts needed for the workflow.  Let's go over to `alcfxray1` and get the client set up.
