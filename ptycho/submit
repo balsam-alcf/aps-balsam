@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+import argparse
+import glob
+import getpass
+import json
+import time
+import subprocess
+import os
+import sys
+import pexpect
+from add_dag import add_dag
+UNAME = getpass.getuser()
+
+def check_existing_tunnel(thetahost, thetaport):
+    '''return true if there's already a matching SSH tunnel'''
+    ps_cmd = f'ps aux | grep {UNAME} | grep "ssh -f -N -L {thetaport}" | grep -v grep'
+    ps_check = subprocess.run(
+         ps_cmd,
+         stdout=subprocess.PIPE,
+         stderr=subprocess.STDOUT,
+         shell=True,
+         encoding="utf-8",
+    )
+    if thetahost in ps_check.stdout:
+        print("Detected already-running SSH tunnel:\n", ps_check.stdout.strip())
+        return True
+    else:
+        return False
+
+def connect(thetahost, thetaport):
+    '''Set up SSH tunnel with port-forwarding, if there isn't already one alive'''
+    if check_existing_tunnel(thetahost, thetaport):
+        return
+
+    credential = getpass.getpass("Please authenticate to Theta: ")
+    ssh_cmd = f"ssh -f -N -L {thetaport}:localhost:{thetaport} {UNAME}@{thetahost}.alcf.anl.gov"
+    ssh_cmd = f"ssh -f -N -L {thetaport}:localhost:{thetaport} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {UNAME}@{thetahost}.alcf.anl.gov"
+    tunnel = pexpect.spawn(ssh_cmd)
+
+    tunnel.expect('Password:')
+    time.sleep(0.1)
+    tunnel.sendline(credential)
+    time.sleep(0.1)
+    return tunnel
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--db', required=True, help="path to directory containing server-info")
+    parser.add_argument('--input-dir', required=True, help="path to input directory")
+    parser.add_argument('--destination', required=True, help="where to send data on Theta")
+    parser.add_argument('--tag', required=True, help="Workflow tag for this task")
+    args = parser.parse_args()
+    args.db = os.path.abspath(os.path.expanduser(args.db))
+    args.input_dir = os.path.abspath(os.path.expanduser(args.input_dir))
+    args.destination = os.path.abspath(os.path.expanduser(args.destination))
+    return args
+
+def validate_args(args):
+    assert os.path.isdir(args.db)
+    assert os.path.isdir(args.input_dir)
+    info_path = os.path.join(args.db, 'server-info')
+    assert os.path.isfile(info_path)
+
+def read_server_info(db_path):
+    info_path = os.path.join(db_path, 'server-info')
+    with open(info_path) as fp: info = json.load(fp)
+    thetaport = info["port"]
+    thetahost = info.get("thetahost", info["host"])
+    info["thetahost"] = thetahost
+    info["host"] = "localhost"
+    with open(info_path, 'w') as fp: fp.write(json.dumps(info))
+    return thetahost, thetaport
+
+def check_apps(required_apps):
+    '''Ensure that requisite apps are already registered'''
+    from balsam.core.models import ApplicationDefinition as App
+    found_apps = [app.name for app in App.objects.all()]
+    assert all(app in found_apps for app in required_apps)
+    print(f"Got all required apps ({required_apps}): OK!")
+
+def transfer(input_path, host, dest):
+    print(f"Transferring {input_path}")
+    print(f"To: {dest} of {host}")
+    scp_cmd = f'scp -r {input_path} {UNAME}@{host}.alcf.anl.gov:{dest}'
+    transfer_proc = subprocess.Popen(scp_cmd, shell=True)
+
+    print("Waiting on scp to finish...")
+    retcode = transfer_proc.wait()
+    print(f"SCP Done: return code {retcode}")
+    if retcode != 0:
+        print("Transfer did not succeed.")
+        sys.exit(1)
+
+def main():
+    args = get_args()
+    validate_args(args)
+
+    os.environ['BALSAM_DB_PATH'] = os.path.abspath(args.db)
+    thetahost, thetaport = read_server_info(args.db)
+    tunnel = connect(thetahost, thetaport)
+
+    check_apps(["reconstruct_cone",])
+
+    # Transfer files
+    transfer(args.input_dir, thetahost, args.destination)
+
+    # create DAG
+    input_basename = os.path.basename(args.input_dir)
+    input_path_on_theta = os.path.join(args.destination, input_basename)
+    print("Adding DAG to Balsam DB")
+    jobs = add_dag(input_path_on_theta, args.tag)
+
+if __name__ == "__main__":
+    main()

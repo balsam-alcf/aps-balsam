@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+import os
+import shutil
+from balsam.core.models import ApplicationDefinition as App
+
+here = os.path.abspath(os.path.dirname(__file__))
+EXE = '/projects/datascience/msalim/large3dxrayADSP/reconstruct_cone.py'
+assert shutil.which(EXE) is not None
+
+# Define Apps
+reconstruct_cone = App(
+    name = "reconstruct_cone",
+    executable = EXE,
+    preprocess = os.path.join(here, "pre_reconstruct_cone.py"),
+    envscript = os.path.join(here, "envs.sh"),
+)
+assert shutil.which(reconstruct_cone.preprocess) is not None
+assert os.path.isfile(reconstruct_cone.envscript)
+
+# Create or update the DB with APPS defined above
+APPS = [reconstruct_cone,]
+for app in APPS:
+    if not App.objects.filter(name=app.name).exists():
+        app.save()
+        print(f"Created app {app.name} in DB")
+    else:
+        existing_app = App.objects.get(name=app.name)
+        existing_app.executable = app.executable
+        existing_app.postprocess = app.postprocess
+        existing_app.preprocess = app.preprocess
+        if hasattr(app, "envscript"):
+            existing_app.envscript = app.envscript
+        existing_app.save()
+        print(f"Updated App {app.name} in DB")

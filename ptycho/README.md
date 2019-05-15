@@ -7,7 +7,7 @@ module load balsam
 balsam init /path/to/testdb
 . balsamactivate /path/to/testdb
 ```
-We are going to need a place to store the .h5 and .imm files as they are transferred over from `alcfxray1`.  Let's place them near the database by making the following directory:
+We are going to need a place to store the input directories transferred over from `alcfxray1`.  Let's place them near the database by making the following directory:
 ```
 mdkir /path/to/testdb/data_stage
 ```
@@ -23,24 +23,24 @@ This will ensure the service only queues up one job at a time run in the default
 Finally, stand up the balsam service with `balsam service`.  It will be logging to a service logfile in the `/path/to/testdb/log` directory.  
 
 ## Populate DB with Apps
-Now, grab a corr build, and pull down this repository to set up the workflow. 
+Now, grab the large3dxrayADSP ptycho package, and pull down this repository to set up the workflow. 
 ```
 git clone https://github.com/balsam-alcf/aps-balsam
-cd aps-balsam/xpcs
+cd aps-balsam/ptycho
 ```
-You will need to set one line in the `init-apps` script to tell Balsam where your corr binary is installed.
+You will need to set one line in the `init-apps` script to tell Balsam where your ptycho package is installed:
 ```
-CORR_EXE = '/projects/datascience/aps/software/xpcs-eigen/build/corr'
+EXE = '/projects/datascience/msalim/large3dxrayADSP/reconstruct_cone.py'
 ```
-Now run the script to register the Applications with Balsam.  If all went well, you can verify with `balsam ls` that the applications are properly defined.
+Now run the script to register the Application with Balsam.  If all went well, you can verify with `balsam ls apps` that the applications are properly defined.
 
 ```
-# after setting corr_exe above
+# after setting EXE above
 ./init-apps
 balsam ls apps --verbose # ensure the apps show up correctly!
 ```
 
-That's it for Balsam setup on theta.  You now have a running Balsam DB containing the corr Application definitions, command lines, and pre-processing scripts needed for the workflow.  Let's go over to `alcfxray1` and get the client set up.
+That's it for Balsam setup on theta.  You now have a running Balsam DB containing the `job_recon_cone` Applicationdefinition and associated environment needed to run the application. Let's go over to `alcfxray1` and get the client set up.
 
 # ALCFXray1 Setup
 
@@ -98,21 +98,20 @@ scp msalim@theta:/path/to/testdb/server-info .
 Now we are finally ready to submit some work.  The `submit` script will open a tunnel with port forwarding, prompting you to authenticate to Theta. Once this tunnel is open, it should stay active in the background and subsequent `submit` calls will use the existing tunnel.
 You will need to provide 3 paths to the submit command:
  - `--db` is the **local** (`alcfxray1`) directory containing server-info
- - `--h5` is the **local** (`alcfxray1`) path to the .h5 file
- - `--imm` is the **local** (`alcfxray1`) path to the .imm file
- - `--destination` is the **remote** (`theta`) directory to which the local .h5 and .imm files will be transferred.
- - `--tag` is a Balsam "workflow" identifier that you can use to group related corr runs.  The working directory of each corr task created with the same tag will be created under the same directory
+ - `--input-dir` is the **local** (`alcfxray1`) path to the input directory (containing .h5 and other requisite innputs)
+ - `--destination` is the **remote** (`theta`) directory to which the local input directory will be transferred.
+ - `--tag` is a Balsam "workflow" identifier that you can use to group related ptycho runs.  Runs with the same tag will be located under the `data/{tag}` subdirectory of the Balsam database on Theta. 
  
  Be sure that you actually created the `--destination` directory earlier on Theta.
  
 ```
-./submit --db=~/db --h5 ~/path/to/my.h5 --imm ~/path/to/my.imm --tag TEST --destination /path/to/testdb/data_stage
+./submit --db=~/db --input-dir ~/path/to/my/input_dir --tag TEST --destination /path/to/testdb/data_stage
 ```
   
-That's it!  After the files are transferred, the corr job will be registered with Balsam.  You can verify with `balsam ls` that the jobs were actually created.  
+That's it!  After the files are transferred, the job will be registered with Balsam.  You can verify with `balsam ls` that the jobs were actually created.  
 
-The balsam service will immediately start preprocessing the first step and subsequently submit a launcher job to process the whole DAG.  You can track the job states with `balsam ls` and submit many more DAGs with `./submit`.  
+The balsam service will immediately start preprocessing and subsequently submit a launcher job to process the whole DAG.  You can track the job states with `balsam ls` and submit many more DAGs with `./submit`.  
 
-The beauty of using Balsam's dynamic job launcher  is that new XPCS jobs will automatically run inside the resources scheduled for other XPCS jobs if they are ever idle nodes.  The Balsam service will ensure that a batch of resources is always scheduled for running your jobs, as long as there are jobs to run.  Failures are automatically identified and marked for human intervention.  
+The beauty of using Balsam's dynamic job launcher is that new jobs will seamlessly run inside the resources scheduled for other jobs, provided there are enough idle compute nodes. The Balsam service will ensure that a batch of resources is always scheduled for running your jobs, as long as there are jobs to run.  Failures are automatically identified and marked for human intervention.  
 
 You can read over the service log (in the `log/` subdirectory of the balsam database) to track the activity of the automated job submission service.  The launcher logs will show detailed information for every single job launch command.  Of course, you can always verify that the job is queued in Cobalt with `qstat` or even terminate jobs with `qdel`, and Balsam will do the right thing, marking `RUNNING` jobs as `RUN_TIMEOUT`.  If you want to stop the service, `ssh` to the theta login node running it (this will be apparent from the top line of the service log), and use `kill <service-pid>`. 
