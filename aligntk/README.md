@@ -26,12 +26,12 @@ Finally, stand up the balsam service with `balsam service`.  It will be logging 
 Now, grab an AlignTK build, and pull down this repository to set up the workflow. 
 ```
 git clone https://github.com/balsam-alcf/aps-balsam
-cd aps-balsam
+cd aps-balsam/aligntk
 ```
 You will need to set one line in the `init-xray-apps` script to tell Balsam where your AlignTK binaries are installed.
 Set a relative path to the `aps-balsam` directory as follows:
 ```
-aligntk_bin = '../aligntk-1.0.2/install/bin' # relative to here
+aligntk_bin = '../../aligntk-1.0.2/install/bin' # relative to here
 ```
 Now run the script to register the Applications with Balsam.  If all went well, you can verify with `balsam ls` that the applications are properly defined.
 
@@ -105,6 +105,7 @@ You will need to provide 3 paths to the submit command:
  Be sure that you actually created the `--destination` directory earlier on Theta.
  
 ```
+cd ~/aps-balsam/aligntk
 ./submit --db=~/db --images ~/images/on/alcfxray1 --destination /path/to/testdb/transferred_images
 ```
   
