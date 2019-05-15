@@ -24,6 +24,7 @@ def add_dag(h5_path, imm_path, wf_tag):
         workflow=wf_tag,
         application="corr",
         args = args,
+        environ_vars = "HDF5_USE_FILE_LOCKING=FALSE",
         **common_params,
     )
     corr_job.data['h5_path'] = h5_path
