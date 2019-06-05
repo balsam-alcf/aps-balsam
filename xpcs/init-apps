@@ -12,6 +12,7 @@ corr = App(
     name = "corr",
     executable = CORR_EXE,
     preprocess = os.path.join(here, "pre_corr.py"),
+    postprocess = os.path.join(here, "post_corr.py"),
 )
 
 # Create or update the DB with APPS defined above

@@ -3,7 +3,7 @@ import os
 from balsam.launcher.dag import current_job
 from transfer import transfer
 
-print("Stage IN")
+print("Stage OUT")
 THETA_ENDPOINT = '08925f04-569f-11e7-bef8-22000b9a448b'
 
 here = os.getcwd()
@@ -11,11 +11,16 @@ remote_endpoint = current_job.data['endpoint']
 h5_path = current_job.data['h5_path']
 imm_path = current_job.data['imm_path']
 
-remote_paths = [h5_path, imm_path]
+result_top = current_job.data['result_path']
+
 local_paths = [
     os.path.join(here, os.path.basename(h5_path)),
-    os.path.join(here, os.path.basename(imm_path)),
+    #os.path.join(here, os.path.basename(imm_path)), # NOT NEEDED
+]
+remote_paths = [
+    os.path.join(result_top, h5_path[1:])
+    #os.path.join(result_top, imm_path[1:]) # NOT NEEDED
 ]
 
-transfer_pairs = zip(remote_paths, local_paths)
-transfer(remote_endpoint, THETA_ENDPOINT, transfer_pairs)
+transfer_pairs = zip(local_paths, remote_paths)
+transfer(THETA_ENDPOINT, remote_endpoint, transfer_pairs)
