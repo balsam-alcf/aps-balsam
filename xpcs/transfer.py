@@ -1,10 +1,14 @@
 import subprocess
+import os
 def transfer(src_endp, dest_endp, transfer_paths):
     cmd = f'globus transfer {src_endp} {dest_endp} --batch'
     stdin = '\n'.join(f'{src} {dest}' for src,dest in transfer_paths)
 
     print("Starting Globus Transfer...")
 
+    env = os.environ.copy()
+    env['LC_ALL'] = 'C.UTF-8'
+    env['LANG'] = 'C.UTF-8'
     p = subprocess.run(
         args = cmd.split(),
         shell = False,
@@ -12,6 +16,7 @@ def transfer(src_endp, dest_endp, transfer_paths):
         encoding = 'utf-8',
         stdout = subprocess.PIPE,
         stderr = subprocess.STDOUT,
+        env=env,
     )
     if p.returncode != 0:
         raise RuntimeError(

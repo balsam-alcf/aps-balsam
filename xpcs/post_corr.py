@@ -18,8 +18,8 @@ local_paths = [
     #os.path.join(here, os.path.basename(imm_path)), # NOT NEEDED
 ]
 remote_paths = [
-    os.path.join(result_top, h5_path[1:])
-    #os.path.join(result_top, imm_path[1:]) # NOT NEEDED
+    h5_path,
+    #imm_path,
 ]
 
 transfer_pairs = zip(local_paths, remote_paths)
