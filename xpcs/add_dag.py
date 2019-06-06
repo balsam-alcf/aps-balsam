@@ -20,8 +20,8 @@ def add_dag(h5_path, imm_path, result_top):
 
     args = f'{os.path.basename(h5_path)} -imm {os.path.basename(imm_path)}'
     corr_job = Job(
-        name=os.path.basename(imm_path),
-        workflow=os.path.basename(h5_path),
+        name=os.path.splitext(os.path.basename(imm_path))[0],
+        workflow='xpcs',
         application="corr",
         args = args,
         environ_vars = "HDF5_USE_FILE_LOCKING=FALSE:OMP_NUM_THREADS=64",
