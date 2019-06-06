@@ -1,6 +1,6 @@
 import subprocess
 def transfer(src_endp, dest_endp, transfer_paths):
-    cmd = 'globus transfer {src_endp} {dest_endp} --batch'
+    cmd = f'globus transfer {src_endp} {dest_endp} --batch'
     stdin = '\n'.join(f'{src} {dest}' for src,dest in transfer_paths)
 
     print("Starting Globus Transfer...")
@@ -38,7 +38,7 @@ def transfer(src_endp, dest_endp, transfer_paths):
     print(f"Transfer initiated OK (Task ID {task_id})")
     print("Waiting on task completion now...")
     p = subprocess.run(
-        'globus task wait {task_id}'.split(),
+        f'globus task wait {task_id}'.split(),
         shell = False,
         check = True
     )

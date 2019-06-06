@@ -98,7 +98,18 @@ def main():
                 assert os.path.isfile(h5)
                 assert imm.endswith('.imm')
                 assert os.path.isfile(imm)
-                job = add_dag(h5, imm, args.result_dir)
+
+                # We cannot globus transfer from /gdata, so we first stage locally
+                h5_stage = os.path.join(args.result_dir, h5[1:])
+                imm_stage = os.path.join(args.result_dir, imm[1:])
+                if not os.path.isdir(os.path.dirname(h5_stage)):
+                    os.makedirs(os.path.dirname(h5_stage))
+                if not os.path.isdir(os.path.dirname(imm_stage)):
+                    os.makedirs(os.path.dirname(imm_stage))
+                shutil.copy(h5, h5_stage)
+                shutil.copy(imm, imm_stage)
+
+                job = add_dag(h5_stage, imm_stage, args.result_dir)
                 jobs.append(job)
     BalsamJob.objects.bulk_create(jobs)
     print(f"Added {len(jobs)} new jobs to DB")
