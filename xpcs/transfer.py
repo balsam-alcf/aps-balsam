@@ -1,5 +1,7 @@
 import subprocess
 import os
+import time
+
 def transfer(src_endp, dest_endp, transfer_paths):
     cmd = f'globus transfer {src_endp} {dest_endp} --batch'
     stdin = '\n'.join(f'{src} {dest}' for src,dest in transfer_paths)
@@ -9,23 +11,32 @@ def transfer(src_endp, dest_endp, transfer_paths):
     env = os.environ.copy()
     env['LC_ALL'] = 'C.UTF-8'
     env['LANG'] = 'C.UTF-8'
-    p = subprocess.run(
-        args = cmd.split(),
-        shell = False,
-        input = stdin,
-        encoding = 'utf-8',
-        stdout = subprocess.PIPE,
-        stderr = subprocess.STDOUT,
-        env=env,
-    )
-    if p.returncode != 0:
-        raise RuntimeError(
-            f'''Globus transfer nonzero return: {p.returncode}
-            Cmd: {cmd}
-            Stdin:\n {stdin}
-            Stdout/Stderr:\n {p.stdout}
-            '''
+
+    for retry in range(4):
+        p = subprocess.run(
+            args = cmd.split(),
+            shell = False,
+            input = stdin,
+            encoding = 'utf-8',
+            stdout = subprocess.PIPE,
+            stderr = subprocess.STDOUT,
+            env=env,
         )
+        if p.returncode == 0:
+            break
+        else:
+            if 'GlobusConnectionError' in p.stdout:
+                print("GlobusConnectionError..retrying")
+                time.sleep(5)
+                continue
+            else:
+                raise RuntimeError(
+                    f'''Globus transfer nonzero return: {p.returncode}
+                    Cmd: {cmd}
+                    Stdin:\n {stdin}
+                    Stdout/Stderr:\n {p.stdout}
+                    '''
+                )
 
     task_id = None
     for line in p.stdout.split('\n'):
